@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de API RESTful PHP</title>
+    <meta name="author" content="Onivaldo Miquelino">          
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style> 
+        body { font-family: ui-sans-serif, system-ui; } 
+        pre { background: #1f2937; color: #f9fafb; padding: 10px; border-radius: 6px; overflow-x: auto; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 flex justify-center">
+
+    <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-2xl">
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">API RESTful de Livros (Teste)</h1>
+        
+        <div class="mb-6 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
+            <p class="font-bold text-indigo-800">Instruções:</p>
+            <ol class="list-decimal list-inside text-sm text-indigo-700">
+                <li>Abra o Console do Desenvolvedor (F12).</li>
+                <li>Teste os botões CRUD (GET, POST, PUT, DELETE).</li>
+                <li>Observe o código de resposta HTTP e o JSON retornado no console e na tela.</li>
+            </ol>
+            <p class="text-xs text-red-600 mt-2">Certifique-se de que a API (`src/api.php`) está rodando no `localhost:8001`.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <button id="getBooksBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition">
+                1. GET (Listar Todos)
+            </button>
+             <button id="getSingleBookBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition">
+                2. GET /id=1 (Listar Único)
+            </button>
+            <button id="postBookBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
+                3. POST (Criar Novo)
+            </button>
+            <button id="putBookBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition">
+                4. PUT /id=1 (Atualizar)
+            </button>
+            <button id="deleteBookBtn" class="col-span-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition">
+                5. DELETE /id=1 (Excluir)
+            </button>
+        </div>
+        
+        <h2 class="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Resultado da Última Chamada</h2>
+        <div class="flex justify-between text-sm mb-2">
+            <p>Método: <span id="resultMethod" class="font-mono">N/A</span></p>
+            <p>Status HTTP: <span id="resultStatus" class="font-mono">N/A</span></p>
+        </div>
+        <pre id="resultJson"></pre>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8001/src/api.php'; 
+
+        const resultMethod = document.getElementById('resultMethod');
+        const resultStatus = document.getElementById('resultStatus');
+        const resultJson = document.getElementById('resultJson');
+        
+        // Dados de teste
+        const testData = {
+            title: "A Jornada do Herói RESTful",
+            author: "Augusto César",
+            isbn: "978-65-87425-01-5"
+        };
+        const updateData = {
+            author: "A. César, PhD",
+            title: "RESTful API: Guia Definitivo"
+        };
+
+        // Função utilitária para fazer a chamada e exibir o resultado
+        async function callApi(url, method = 'GET', data = null) {
+            resultMethod.textContent = method;
+            resultStatus.textContent = '...';
+            resultJson.textContent = 'Aguardando resposta...';
+
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const status = response.status;
+                
+                resultStatus.textContent = `${status} ${response.statusText}`;
+
+                // Trata a resposta 204 (No Content) que não tem corpo JSON
+                if (status === 204) {
+                    resultJson.textContent = "204 No Content (Exclusão bem-sucedida)";
+                    return;
+                }
+                
+                const result = await response.json();
+                resultJson.textContent = JSON.stringify(result, null, 2);
+
+                console.log(`[${method} ${status}] Sucesso:`, result);
+
+            } catch (error) {
+                resultJson.textContent = `ERRO: ${error.message}. Verifique o console.log para detalhes.`;
+                console.error(`[${method}] Erro na Requisição:`, error);
+            }
+        }
+
+        // --- Event Listeners para Testes ---
+
+        // 1. GET ALL
+        document.getElementById('getBooksBtn').addEventListener('click', () => {
+            callApi(API_BASE_URL, 'GET');
+        });
+        
+        // 2. GET SINGLE (ID 1)
+        document.getElementById('getSingleBookBtn').addEventListener('click', () => {
+             // ATENÇÃO: Se o ID 1 foi excluído, mude para um ID existente!
+            const id = prompt("Digite o ID do livro a buscar (Ex: 1):", 1);
+            if(id) callApi(`${API_BASE_URL}?id=${id}`, 'GET');
+        });
+
+        // 3. POST (CREATE)
+        document.getElementById('postBookBtn').addEventListener('click', () => {
+            callApi(API_BASE_URL, 'POST', testData);
+        });
+
+        // 4. PUT (UPDATE) (ID 1)
+        document.getElementById('putBookBtn').addEventListener('click', () => {
+             // ATENÇÃO: Se o ID 1 foi excluído, mude para um ID existente!
+            const id = prompt("Digite o ID do livro a atualizar (Ex: 1):", 1);
+            if(id) callApi(`${API_BASE_URL}?id=${id}`, 'PUT', updateData);
+        });
+
+        // 5. DELETE (ID 1)
+        document.getElementById('deleteBookBtn').addEventListener('click', () => {
+             // ATENÇÃO: Se o ID 1 já foi excluído, tente um ID que você acabou de criar!
+            const id = prompt("Digite o ID do livro a excluir (Ex: 1):", 1);
+            if(confirm(`Tem certeza que deseja DELETAR o livro ID ${id}?`)) {
+                if(id) callApi(`${API_BASE_URL}?id=${id}`, 'DELETE');
+            }
+        });
+    </script>
+</body>
+</html>
