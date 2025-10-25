@@ -51,6 +51,8 @@ php-rest-api/
 ├── Database.php
 ├── BookController.php
 ├── api.php
+├── README.md
+├── .gitignore
 └── books.sqlite
 ```
 ---
